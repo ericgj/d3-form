@@ -1,0 +1,78 @@
+<html>
+  <head>
+    <title>d3-form :: example</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src="d3.v3.min.js"></script>
+  </head>
+  <body>
+    <script src="../build/build.js"></script>
+    <script>
+      var Form = require('d3-form');
+      
+      var data = [
+        { name: "Aaron", age: 51, color: "red" },
+        { name: "Bertha", age: 2, color: "purple" },
+        { name: "Celyne", age: 22, color: "blue" }
+      ]
+
+      d3.select('body').call( 
+        Form().data( data[0] ).bindInput( logInput )
+          .fieldset(
+            inputText('name').label('Name'),
+            inputText('age').label('Age'),
+            inputText('color').label('Favorite Color')
+          )
+          .legend('Stats')
+      )
+
+      function logInput(key,val){
+        console.log('%s => %s', key, val);
+      }
+
+      function inputText(name){
+
+        var labeltext
+          , labelSelector = "label[for="+name+"]"
+          , nameSelector = "input[name="+name+"]"
+          , dispatcher
+
+        render.dispatch = function(_){
+          dispatcher = _; return this;
+        }
+
+        render.label = function(_){
+          labeltext = _; return this;
+        }
+
+        render.enter = function(enter){
+          enter.append('label').attr('for',name);
+          enter.append('input').attr('type','text').attr('name',name);
+        }
+
+        function render(form){
+          if (!(undefined === labeltext)){
+            var label = form.select( labelSelector );
+            label.text(labeltext);
+          }
+          var field = form.select( nameSelector );
+          field.attr('value', valueAccessor );
+          if (dispatcher){
+            field.on('change', dispatchInput );
+          }
+        }
+
+        function valueAccessor(d){
+          return d[name];
+        }
+        
+        function dispatchInput(){
+          dispatcher.input(this.getAttribute('name'), this.value);
+        }
+
+        return render;
+      }
+
+    </script>
+  </body>
+</html>
+

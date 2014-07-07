@@ -1,0 +1,17 @@
+{
+  "name": "d3-form",
+  "repo": "ericgj/d3-form",
+  "description": "Simple modular HTML forms using d3",
+  "version": "0.0.1",
+  "keywords": [],
+  "dependencies": {
+    "ericgj/d3-dispatch": "*",
+    "ericgj/d3-rebind": "*"
+  },
+  "development": {},
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": [
+    "index.js"
+  ]
+}
