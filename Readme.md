@@ -29,27 +29,31 @@
       .legend('Stats')
   )
 
-  // you can also manually bind to the form's input event
-  
-  var myForm = form().data(...).fieldset(...)
-  myForm.on('input', function(name,value){ ... } );
+```
 
-  // for so-called "double-binding" you can simply call 
-  // the form again on the d3 selection
+For so-called "double-binding" you can simply call the form again passing
+in the changed data.
 
-  myForm.on('input', someModel.set.bind(someModel));
+```js
 
-  // or simply
+  // form input bound to model
 
-  myForm.bindInput( someModel );
+  myForm.bindInput( someModel.set.bind(someModel) );
 
-  // then
+  // model changes bound to form
 
   someModel.on('update', function(){ 
-    d3.select('div.form').call( myForm );
+    d3.select('div.form').call( myForm.data(someModel.currentData()) );
   });
 
 ```
+
+Note it's up to you how your models are connected to the data you send into
+the form, and how they expect events to be handled.
+
+However, if your models have a `set(key,value)` method, the above example
+input binding can be shortened to `myForm.bindInput( someModel );`.
+
 
 ## API
 
