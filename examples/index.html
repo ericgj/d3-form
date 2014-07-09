@@ -31,8 +31,8 @@
               inputText('color').label('Favorite Color')
             )
             .legend('Stats')
-            .input( link('reset').dispatches('reset') )
-            .input( link('random').onclick( function(){
+            .field( link('reset').dispatches('reset') )
+            .field( link('random').onclick( function(){
                       d3.event.preventDefault();
                       curs = Math.floor( Math.random() * data.length );
                       render();

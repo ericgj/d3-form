@@ -39,7 +39,7 @@ module.exports = function(){
     cancel = _; return this;
   }
 
-  render.input = function(_){
+  render.field = function(_){
     inputs.push(_); return this;
   }
 
