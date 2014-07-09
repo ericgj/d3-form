@@ -47,25 +47,43 @@ module.exports = function(){
     data = _; return this;
   }
 
+  /*
+   * Shortcut for form.on('input', model.set.bind(model));
+   *
+   */
   render.bindInput = function(fn,name){
     if (('object' == typeof fn) && fn.set) fn = fn.set.bind(fn);
     dispatcher.on('input' + (name ? '.'+name : ''), fn);
     return this;
   }
 
+  /*
+   * Shortcut for form.on('reset', model.reset.bind(model));
+   *
+   */
   render.bindReset = function(fn,name){
     if (('object' == typeof fn) && fn.reset) fn = fn.reset.bind(fn);
     dispatcher.on('reset' + (name ? '.'+name : ''), fn);
     return this;
   }
 
+  /*
+   * Shortcut for form.on('submit', model.save.bind(model));
+   *
+   */
   render.bindSubmit = function(fn,name){
     if (('object' == typeof fn) && fn.save) fn = fn.save.bind(fn);
     dispatcher.on('submit' + (name ? '.'+name : ''), fn);
     return this;
   }
 
-
+  /*
+   * Main form render function
+   * Note formsets are rendered first,
+   * followed by input fields (e.g. buttons, links) not in formsets,
+   * then cancel and submit fields
+   *
+   */
   function render(selection){
     
     var form = renderForm(selection);
@@ -195,12 +213,6 @@ module.exports = function(){
     update.call( field );
   }
 
-  function buildField(field, enter, update){
-    if (field.dispatch) field.dispatch(dispatcher);
-    enter.call( field.enter );
-    update.call( field );
-  }
-
   function dispatchSubmit(d,i){
     d3.event.preventDefault();  // disable browser submit
     dispatcher.submit(d,i);
@@ -210,7 +222,11 @@ module.exports = function(){
   return render;
 }
 
-
+/*
+ * Default submit button 
+ * input[type=submit]
+ *
+ */
 function inputSubmit(name){
 
   var labeltext = name
@@ -231,6 +247,11 @@ function inputSubmit(name){
   return render;
 }
 
+/*
+ * Default cancel button 
+ * input[type=button]
+ *
+ */
 function inputCancel(name){
 
   var labeltext = name
