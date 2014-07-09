@@ -15,19 +15,89 @@
         { name: "Celyne", age: 22, color: "blue" }
       ]
 
-      d3.select('body').call( 
-        Form().data( data[0] ).bindInput( logInput )
-          .fieldset(
-            inputText('name').label('Name'),
-            inputText('age').label('Age'),
-            inputText('color').label('Favorite Color')
-          )
-          .legend('Stats')
-      )
+      function render(d){
+        d3.select('body').call( 
+          Form().data( extend({},d) )
+            .bindInput( logInput )
+            .bindReset( function(){ render(d); } )
+            .on( 'submit.log', log('submitted') )
+            .on( 'cancel.log', log('cancelled') )
+            .fieldset(
+              inputText('name').label('Name'),
+              inputText('age').label('Age'),
+              inputText('color').label('Favorite Color')
+            )
+            .legend('Stats')
+            .input( link('reset').dispatches('reset') )
+            .cancel( link('cancel').dispatches('cancel') )
+            .submit('Save')
+        )
+      }
+
+      render(data[0]);
+
+      function extend(object) {
+        // Takes an unlimited number of extenders.
+        var args = Array.prototype.slice.call(arguments, 1);
+
+        // For each extender, copy their properties on our object.
+        for (var i = 0, source; source = args[i]; i++) {
+          if (!source) continue;
+          for (var property in source) {
+            object[property] = source[property];
+          }
+        }
+        return object;
+      }
 
       function logInput(key,val){
         console.log('%s => %s', key, val);
       }
+
+      function log(msg){
+        return function(){
+          console.log(msg);
+        }
+      }
+
+      function link(name){
+
+        var labeltext = name
+          , dispatcher
+          , evtname
+
+        render.dispatch = function(_){
+          dispatcher = _; return this;
+        }
+
+        render.label = function(_){
+          labeltext = _; return this;
+        }
+
+        render.dispatches = function(_){
+          evtname = _; return this;
+        }
+
+        render.enter = function(enter){
+          enter.append('a').classed(name,true).attr('href','#');
+        }
+
+        function render(form){
+          var a = form.select('a.'+name);
+          a.text(labeltext);
+          if (dispatcher){
+            a.on('click', dispatch);
+          }
+        }
+
+        function dispatch(){
+          d3.event.preventDefault();
+          dispatcher[evtname]();
+        }
+
+        return render;
+      }
+
 
       function inputText(name){
 
@@ -56,6 +126,8 @@
           }
           var field = form.select( nameSelector );
           field.attr('value', valueAccessor );
+          var node = field.node();
+          node.value = node.defaultValue;
           if (dispatcher){
             field.on('change', dispatchInput );
           }
