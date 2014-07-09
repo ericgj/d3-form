@@ -27,6 +27,8 @@
         inputText('color').label('Favorite Color')
       )
       .legend('Stats')
+      .submit('Save')
+      .cancel( link('Cancel') )
   )
 
 ```
@@ -62,7 +64,6 @@ input binding can be shortened to `myForm.bindInput( someModel );`.
 
   - Document API
   - Document how to write input components
-  - Form submit preventDefault ? Or ?
   
 ## License
 
