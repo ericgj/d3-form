@@ -3,6 +3,8 @@
 var dispatch = require('d3-dispatch')
   , rebind   = require('d3-rebind')
 
+var identityfn = function(d){ return d; };
+
 module.exports = function(){
   
   var fieldsets = []
@@ -68,9 +70,12 @@ module.exports = function(){
     
     var form = renderForm(selection);
 
-    renderFields( renderFieldsets(form), fieldsets );
-    
-    renderFields( renderInputs(form), [inputs] );
+    var fsets = renderFieldsets(form);
+    fsets.each( function(d,i){
+      renderFields( d3.select(this), fieldsets[i] );
+    })
+
+    renderFields( renderInputs(form), inputs );
 
     renderCancel( form );
 
@@ -95,13 +100,13 @@ module.exports = function(){
   function renderInputs(selection){
 
     // form input fields
-    var fielddata = inputs.map( function(field,j){
-      return { fieldset: 0, field: j, data: data };
+    var fielddata = inputs.map( function(){
+      return data;
     })
 
-    var section = form.selectAll('section.fields').data([fielddata]);
+    var section = selection.selectAll('div.fields').data([fielddata]);
     section.enter()
-          .append('section').classed('fields',true);
+          .append('div').classed('fields',true);
     
     section.exit().remove();
     return section;
@@ -112,7 +117,7 @@ module.exports = function(){
     // fieldsets
     var fielddata = fieldsets.map( function(fields,i){ 
       return fields.map( function(field,j){ 
-        return { fieldset: i, field: j, data: data }; 
+        return data; 
       }); 
     });
 
@@ -130,21 +135,31 @@ module.exports = function(){
   function renderFields(selection, fields){
 
     // field sections -- assumes data has been bound to selection
-    var sections = selection.selectAll('section.field').data(function(d){ return d; });
+    var sections = selection.selectAll('div.field').data(identityfn);
     var enter = 
       sections.enter()
-        .append('section').classed('field',true)
-
-    sections.each( function(d){ 
+        .append('div').classed('field',true)
+    
+    enter.each( function(d,i){
       var section = d3.select(this);
-      var field = fields[d.fieldset][d.field];
-      section.datum(d.data);
-      buildField(field, enter, section); 
+      var field = fields[i];
+      enterField(section, field);
+    })
+
+    sections.each( function(d,i){ 
+      var section = d3.select(this);
+      var field = fields[i];
+      updateField(section, field); 
     });
 
     sections.exit().remove();
 
     return sections;
+  }
+
+  function renderField(selection, field){
+    if (field.dispatch) field.dispatch(dispatcher);
+    selection.call( field );
   }
   
   function renderCancel(selection){
@@ -159,23 +174,24 @@ module.exports = function(){
 
   function renderSection(selection, classed, field){
     var sectiondata = (undefined === field ? [] : [data]);
-    var section = select.selectAll('section.'+classed).data(sectiondata);
+    var section = selection.selectAll('div.'+classed).data(sectiondata);
     var enter = 
       section.enter()
-        .append('section').classed(classed,true)
+        .append('div').classed(classed,true)
 
-    if (field) buildField(field, enter, section); 
+    enterField(enter, field);
+    updateField(section, field);
 
     section.exit().remove();
     return section;
   }
 
-  function enterField(field, enter){
+  function enterField(enter, field){
     if (field.dispatch) field.dispatch(dispatcher);
     enter.call( field.enter );
   }
 
-  function updateField(field,update){
+  function updateField(update, field){
     update.call( field );
   }
 
@@ -208,7 +224,7 @@ function inputSubmit(name){
   }
 
   function render(selection){
-    var btn = selection.select('input[name='+name+']');
+    var btn = selection.select('input[type=submit]');
     btn.attr('value',labeltext);
   }
 
@@ -232,8 +248,8 @@ function inputCancel(name){
     enter.append('input').attr('type','button').attr('name',name);
   }
 
-  function render(form){
-    var btn = form.select('input[name='+name+']');
+  function render(selection){
+    var btn = selection.select('input[name='+name+']').data(identityfn);
     btn.attr('value',labeltext);
     if (dispatcher){
       btn.on('click', dispatchCancel);
