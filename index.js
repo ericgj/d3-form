@@ -95,9 +95,9 @@ module.exports = function(){
 
     renderFields( renderInputs(form), inputs );
 
-    renderCancel( form );
+    if (!(undefined === cancel)) renderCancel( form );
 
-    renderSubmit( form );
+    if (!(undefined === submit)) renderSubmit( form );
 
     form.on('submit', dispatchSubmit);
   }
