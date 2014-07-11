@@ -22,6 +22,7 @@ module.exports = function(){
 
   render.fieldset = function(){
     fieldsets.push([].slice.call(arguments,0));
+    legends.push(null);  // default no content in <legend>
     return this;
   }
 
