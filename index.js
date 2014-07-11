@@ -11,9 +11,8 @@ module.exports = function(){
     , legends = []
     , inputs = []
     , data = {}
-    , dispatcher = dispatch('input','submit','cancel','reset')
+    , dispatcher = dispatch('input','submit','reset')
     , submit
-    , cancel
     , formclass
 
   render.classed = function(_){
@@ -34,10 +33,6 @@ module.exports = function(){
 
   render.submit = function(_){
     submit = _; return this;
-  }
-
-  render.cancel = function(_){
-    cancel = _; return this;
   }
 
   render.field = function(_){
@@ -82,7 +77,7 @@ module.exports = function(){
    * Main form render function
    * Note formsets are rendered first,
    * followed by input fields (e.g. buttons, links) not in formsets,
-   * then cancel and submit fields
+   * then submit field
    *
    */
   function render(selection){
@@ -95,8 +90,6 @@ module.exports = function(){
     })
 
     renderFields( renderInputs(form), inputs );
-
-    if (!(undefined === cancel)) renderCancel( form );
 
     if (!(undefined === submit)) renderSubmit( form );
 
@@ -181,11 +174,6 @@ module.exports = function(){
     selection.call( field );
   }
   
-  function renderCancel(selection){
-    if ('string' == typeof cancel) cancel = inputCancel(cancel);
-    return renderSection(selection, 'cancel', cancel);
-  }
-
   function renderSubmit(selection){
     if ('string' == typeof submit) submit = inputSubmit(submit);
     return renderSection(selection, 'submit', submit);
@@ -248,40 +236,4 @@ function inputSubmit(name){
   return render;
 }
 
-/*
- * Default cancel button 
- * input[type=button]
- *
- */
-function inputCancel(name){
-
-  var labeltext = name
-    , dispatcher
-
-  render.dispatcher = function(_){
-    dispatcher = _; return this;
-  }
-
-  render.label = function(_){
-    labeltext = _; return this;
-  }
-
-  render.enter = function(enter){
-    enter.append('input').attr('type','button').attr('name',name);
-  }
-
-  function render(selection){
-    var btn = selection.select('input[name='+name+']').data(identityfn);
-    btn.attr('value',labeltext);
-    if (dispatcher){
-      btn.on('click', dispatchCancel);
-    }
-  }
-
-  function dispatchCancel(){
-    dispatcher.cancel();
-  }
-
-  return render;
-}
 

@@ -28,7 +28,6 @@
       )
       .legend('Stats')
       .submit('Save')
-      .cancel( link('Cancel') )
   )
 
 ```

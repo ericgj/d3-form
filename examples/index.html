@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <script src="d3.v3.min.js"></script>
     <style>
-      form .fields, form .field, form .cancel, form .submit {
+      form .fields, form .field, form .submit {
         display: inline-block;
         margin: 2px;
       }
@@ -34,7 +34,6 @@
             .bindInput( logInput )
             .on( 'reset', function(){ render(); } )
             .on( 'submit.log', log('submitted') )
-            .on( 'cancel.log', log('cancelled') )
             .on( 'reset.log', log('reset') )
             .fieldset(
               inputText('name').label('Name'),
@@ -49,7 +48,6 @@
                       render();
                     })
             )
-            .cancel( link('cancel').dispatches('cancel') )
             .submit('Save')
         )
       }
