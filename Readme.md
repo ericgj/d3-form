@@ -6,6 +6,8 @@
   * Declarative form builder syntax
   * Input binding abstracted from DOM events
   * Simple interface for custom input components
+  * Multiple forms 
+  * Efficient, single event dispatcher
   
 ## Installation
 
@@ -30,6 +32,8 @@
       .submit('Save')
   )
 
+  function inputHandler(formIndex, key, newvalue){ //... }
+
 ```
 
 For so-called "double-binding" you can simply call the form again passing
@@ -39,12 +43,14 @@ in the changed data.
 
   // form input bound to model
 
-  myForm.bindInput( someModel.set.bind(someModel) );
+  myForm.bindInput( [ someModel.set.bind(someModel) ] );
 
   // model changes bound to form
 
   someModel.on('update', function(){ 
-    d3.select('div.form').call( myForm.data(someModel.currentData()) );
+    d3.select('div.form').call( 
+      myForm.data( [someModel.currentData()] ) 
+    );
   });
 
 ```
