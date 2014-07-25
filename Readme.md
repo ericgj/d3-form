@@ -59,7 +59,7 @@ Note it's up to you how your models are connected to the data you send into
 the form, and how they expect events to be handled.
 
 However, if your models have a `set(key,value)` method, the above example
-input binding can be shortened to `myForm.bindInput( someModel );`.
+input binding can be shortened to `myForm.bindInput( [someModel] );`.
 
 
 ## API
