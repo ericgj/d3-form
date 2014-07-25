@@ -2,6 +2,7 @@
 
 var dispatch = require('d3-dispatch')
   , rebind   = require('d3-rebind')
+  , isArray  = require('isArray')
 
 var identityfn = function(d){ return d; };
 
@@ -40,114 +41,138 @@ module.exports = function(){
   }
 
   render.data = function(_){
-    data = _; return this;
+    data = isArray(_) ? _ : [_]; return this;
   }
 
   /*
-   * Shortcut for form.on('input', model.set.bind(model));
+   * Bind 'input' to:
+   * 1. single handler function with signature ( formindex, key, value )
+   * 2. array of functions with signatures  ( key, value )
+   * 3. array of objects with 'set' methods with signatures   ( key, value )
    *
    */
-  render.bindInput = function(fn,name){
-    if (('object' == typeof fn) && fn.set) fn = fn.set.bind(fn);
-    dispatcher.on('input' + (name ? '.'+name : ''), fn);
+  render.bindInput = function(fns,name){
+    if ('function' == typeof fns){
+      bindSingle('input', name, fns);
+    } else {
+      bindMultiple('input', name, fns, 'set');
+    }
     return this;
   }
 
   /*
-   * Shortcut for form.on('reset', model.reset.bind(model));
+   * Bind 'reset' to:
+   * 1. single handler function with signature ( formindex )
+   * 2. array of functions
+   * 3. array of objects with 'reset' methods 
    *
    */
-  render.bindReset = function(fn,name){
-    if (('object' == typeof fn) && fn.reset) fn = fn.reset.bind(fn);
-    dispatcher.on('reset' + (name ? '.'+name : ''), fn);
+  render.bindReset = function(fns,name){
+    if ('function' == typeof fns){
+      bindSingle('reset', name, fns);
+    } else {
+      bindMultiple('reset', name, fns, 'reset');
+    }
     return this;
   }
 
   /*
-   * Shortcut for form.on('submit', model.save.bind(model));
+   * Bind 'submit' to:
+   * 1. single handler function with signature ( formindex, value )
+   * 2. array of functions with signatures  ( value )
+   * 3. array of objects with 'save' methods with signatures   ( value )
    *
    */
-  render.bindSubmit = function(fn,name){
-    if (('object' == typeof fn) && fn.save) fn = fn.save.bind(fn);
-    dispatcher.on('submit' + (name ? '.'+name : ''), fn);
+  render.bindSubmit = function(fns,name){
+    if ('function' == typeof fns){
+      bindSingle('submit', name, fns);
+    } else {
+      bindMultiple('submit', name, fns, 'save');
+    }
     return this;
   }
 
-  /*
-   * Main form render function
-   * Note formsets are rendered first,
-   * followed by input fields (e.g. buttons, links) not in formsets,
-   * then submit field
-   *
-   */
-  function render(selection){
-    
-    var form = renderForm(selection);
-
-    var fsets = renderFieldsets(form);
-    fsets.each( function(d,i){
-      renderFields( d3.select(this), fieldsets[i] );
-    })
-
-    renderFields( renderInputs(form), inputs );
-
-    if (!(undefined === submit)) renderSubmit( form );
-
-    form.on('submit', dispatchSubmit);
+  function bindSingle(evt, name, fn){
+    dispatcher.on(evt + (name ? '.'+name : ''), fn); 
   }
 
-  function renderForm(selection){
-    
-    // form
-    var form = selection.selectAll('form').data([data]);
-    form.enter()
-          .append('form')
-            .classed(formclass || "", !!formclass);
-    
-    form.exit().remove();
-    return form;
-
-  }
-
-  function renderInputs(selection){
-
-    // form input fields
-    var fielddata = inputs.map( function(){
-      return data;
-    })
-
-    var section = selection.selectAll('div.fields').data([fielddata]);
-    section.enter()
-          .append('div').classed('fields',true);
-    
-    section.exit().remove();
-    return section;
-  }
-
-  function renderFieldsets(selection){
-
-    // fieldsets
-    var fielddata = fieldsets.map( function(fields,i){ 
-      return fields.map( function(field,j){ 
-        return data; 
-      }); 
+  function bindMultiple(evt, name, fns, meth){
+    fns = (isArray(fns) ? fns : [fns]);
+    fns = fns.map( function(fn){
+      if (('object' == typeof fn) && fn[meth]) return fn[meth].bind(fn);
+      return fn;
     });
+    dispatcher.on(evt + (name ? '.'+name : ''), function(i){
+      var fn = fns[i];
+      if (!fn) return;
+      var args = [].slice.call(arguments,1);
+      fn.apply(null,args);
+    });
+    return this;
+  }
 
-    var fsets = selection.selectAll('fieldset').data(fielddata);
+ 
+  function formData(){
+    return data.map( function(rec,formindex){
+      return {
+        'value': rec,
+        'fieldsets': fieldsets.map( function(fieldset,i){
+          return {
+            'legend': legends[i],
+            'fields': fieldsets[i].map( function(){ 
+                        return { 'value': rec, 'form': formindex };  
+                      })
+          };
+        }),
+        'fields': inputs.map( function(){
+          return { 'value': rec, 'form': formindex };
+        })
+      };
+    });
+  }
+
+  function render(selection){
+  
+    var forms = selection.selectAll('form').data(formData());
+    var enter = forms.enter()
+           .append('form')
+             .classed(formclass || "", !!formclass);
+    
+    forms.exit().remove();
+
+    renderFieldsets( forms );
+
+    enter.append('div').classed('fields',true);
+
+    renderFields( forms.selectAll('div.fields'), inputs );
+
+    if (!(undefined === submit)) renderSubmit( forms );
+    forms.on('submit', dispatchSubmit);
+
+  }
+
+  function renderFieldsets( forms ){
+
+    var fsets = forms.selectAll('fieldset')
+                       .data( function(d){ return d.fieldsets; });
     fsets.enter()
       .append('fieldset')
         .append('legend')
-          .text(function(d,i){ return legends[i];} );
+          .text(function(d){ return d.legend;} );
     
     fsets.exit().remove();
 
+    fsets.each( function(d,i){
+      renderFields( d3.select(this), fieldsets[i] );
+    })
     return fsets;
+
   }
 
   function renderFields(selection, fields){
 
-    // field sections -- assumes data has been bound to selection
-    var sections = selection.selectAll('div.field').data(identityfn);
+    var sections = selection.selectAll('div.field')
+                     .data( function(d){ return d.fields; });
     var enter = 
       sections.enter()
         .append('div').classed('field',true)
@@ -167,31 +192,29 @@ module.exports = function(){
     sections.exit().remove();
 
     return sections;
+
   }
 
-  function renderField(selection, field){
-    if (field.dispatch) field.dispatch(dispatcher);
-    selection.call( field );
-  }
-  
-  function renderSubmit(selection){
+  function renderSubmit( forms ){
     if ('string' == typeof submit) submit = inputSubmit(submit);
-    return renderSection(selection, 'submit', submit);
+    return renderSection( forms, 'submit', [submit]);
   }
 
-  function renderSection(selection, classed, field){
-    var sectiondata = (undefined === field ? [] : [data]);
-    var section = selection.selectAll('div.'+classed).data(sectiondata);
+  function renderSection(selection, classed, fields){
+    var section = selection.selectAll('div.'+classed).data([0]);
     var enter = 
       section.enter()
         .append('div').classed(classed,true)
 
-    enterField(enter, field);
-    updateField(section, field);
+    fields.forEach( function(field){
+      enterField(enter, field);
+      updateField(section, field);
+    });
 
     section.exit().remove();
     return section;
   }
+
 
   function enterField(enter, field){
     if (field.dispatch) field.dispatch(dispatcher);
@@ -202,14 +225,18 @@ module.exports = function(){
     update.call( field );
   }
 
+  // note i here is the form index
+  // and d.value is the current record
   function dispatchSubmit(d,i){
     d3.event.preventDefault();  // disable browser submit
-    dispatcher.submit(d,i);
+    dispatcher.submit(i, d.value);
   }
+
 
   rebind(render, dispatcher, 'on');
   return render;
 }
+
 
 /*
  * Default submit button 
@@ -229,7 +256,7 @@ function inputSubmit(name){
   }
 
   function render(selection){
-    var btn = selection.select('input[type=submit]');
+    var btn = selection.select('input[name=' + name + ']');
     btn.attr('value',labeltext);
   }
 

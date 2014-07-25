@@ -26,13 +26,27 @@
         { name: "Celyne", age: 22, color: "blue" }
       ]
 
-      var curs = 0;
+      var models = data.map( function(){ return setter(); } );
+
+      function setter(){
+        var changes = {}
+
+        set.changes = function(){ return changes; }
+        
+        function set(k,v){
+          changes[k] = v;
+        }
+        
+        return set;
+      }
 
       function render(){
         d3.select('body').call( 
-          Form().data( extend({},data[curs]) )
-            .bindInput( logInput )
+          Form().data( data )
+            .bindInput( models )
+            .bindSubmit( mutate )
             .on( 'reset', function(){ render(); } )
+            .on( 'input.log', logInput )
             .on( 'submit.log', log('submitted') )
             .on( 'reset.log', log('reset') )
             .fieldset(
@@ -42,17 +56,16 @@
             )
             .legend('Stats')
             .field( link('reset').dispatches('reset') )
-            .field( link('random').onclick( function(){
-                      d3.event.preventDefault();
-                      curs = Math.floor( Math.random() * data.length );
-                      render();
-                    })
-            )
             .submit('Save')
         )
       }
 
-      render(data[0]);
+      render();
+
+      function mutate(i,d){
+        data[i] = extend(data[i], models[i].changes() );
+        render();
+      }
 
       function extend(object) {
         // Takes an unlimited number of extenders.
@@ -68,13 +81,13 @@
         return object;
       }
 
-      function logInput(key,val){
-        console.log('%s => %s', key, val);
+      function logInput(i,key,val){
+        console.log('form %d, %s => %s', i, key, val);
       }
 
       function log(msg){
         return function(){
-          console.log(msg);
+          console.log(msg + ": %o", arguments);
         }
       }
 
@@ -116,10 +129,10 @@
           }
         }
 
-        function dispatch(){
+        function dispatch(d){
           if (undefined === evtname) return;
           d3.event.preventDefault();
-          dispatcher[evtname]();
+          dispatcher[evtname](d.form,d.value);
         }
 
         return render;
@@ -160,11 +173,11 @@
         }
 
         function valueAccessor(d){
-          return d[name];
+          return d.value[name];
         }
         
-        function dispatchInput(){
-          dispatcher.input(this.getAttribute('name'), this.value);
+        function dispatchInput(d){
+          dispatcher.input(d.form, this.getAttribute('name'), this.value);
         }
 
         return render;

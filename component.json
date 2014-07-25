@@ -6,7 +6,8 @@
   "keywords": [],
   "dependencies": {
     "ericgj/d3-dispatch": "*",
-    "ericgj/d3-rebind": "*"
+    "ericgj/d3-rebind": "*",
+    "yields/isArray": "*"
   },
   "development": {},
   "license": "MIT",
