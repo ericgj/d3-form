@@ -73,6 +73,23 @@ module.exports = function(){
     return this;
   }
 
+
+  function formData(){
+    return {
+      'fieldsets': fieldsets.map( function(fieldset,i){
+        return {
+          'legend': legends[i],
+          'fields': fieldsets[i].map( function(){
+            return data;
+          })
+        };
+      }),
+      'fields': inputs.map( function(){
+        return data;
+      })
+    };
+  }
+
   /*
    * Main form render function
    * Note formsets are rendered first,
@@ -82,63 +99,37 @@ module.exports = function(){
    */
   function render(selection){
     
-    var form = renderForm(selection);
+    var form = selection.selectAll('form').data([formData()]);
+    var enter = 
+      form.enter()
+          .append('form')
+            .classed(formclass || "", !!formclass);
+    
 
     var fsets = renderFieldsets(form);
-    fsets.each( function(d,i){
-      renderFields( d3.select(this), fieldsets[i] );
-    })
 
-    renderFields( renderInputs(form), inputs );
+    enter.append('div').classed('fields',true)
+    renderFields( form.selectAll('div.fields'), inputs );
 
     if (!(undefined === submit)) renderSubmit( form );
 
     form.on('submit', dispatchSubmit);
-  }
 
-  function renderForm(selection){
-    
-    // form
-    var form = selection.selectAll('form').data([data]);
-    form.enter()
-          .append('form')
-            .classed(formclass || "", !!formclass);
-    
     form.exit().remove();
-    return form;
-
-  }
-
-  function renderInputs(selection){
-
-    // form input fields
-    var fielddata = inputs.map( function(){
-      return data;
-    })
-
-    var section = selection.selectAll('div.fields').data([fielddata]);
-    section.enter()
-          .append('div').classed('fields',true);
-    
-    section.exit().remove();
-    return section;
   }
 
   function renderFieldsets(selection){
 
-    // fieldsets
-    var fielddata = fieldsets.map( function(fields,i){ 
-      return fields.map( function(field,j){ 
-        return data; 
-      }); 
-    });
-
-    var fsets = selection.selectAll('fieldset').data(fielddata);
+    var fsets = selection.selectAll('fieldset')
+                  .data(function(d){ return d.fieldsets; });
     fsets.enter()
       .append('fieldset')
         .append('legend')
           .text(function(d,i){ return legends[i];} );
     
+    fsets.each( function(d,i){
+      renderFields( d3.select(this), fieldsets[i] );
+    })
     fsets.exit().remove();
 
     return fsets;
@@ -146,8 +137,8 @@ module.exports = function(){
 
   function renderFields(selection, fields){
 
-    // field sections -- assumes data has been bound to selection
-    var sections = selection.selectAll('div.field').data(identityfn);
+    var sections = selection.selectAll('div.field')
+                     .data(function(d){ return d.fields; });
     var enter = 
       sections.enter()
         .append('div').classed('field',true)
@@ -168,30 +159,27 @@ module.exports = function(){
 
     return sections;
   }
-
-  function renderField(selection, field){
-    if (field.dispatch) field.dispatch(dispatcher);
-    selection.call( field );
-  }
   
   function renderSubmit(selection){
     if ('string' == typeof submit) submit = inputSubmit(submit);
-    return renderSection(selection, 'submit', submit);
+    return renderSection(selection, 'submit', [submit]);
   }
 
-  function renderSection(selection, classed, field){
-    var sectiondata = (undefined === field ? [] : [data]);
-    var section = selection.selectAll('div.'+classed).data(sectiondata);
+  function renderSection(selection, classed, fields){
+    var section = selection.selectAll('div.' + classed).data([0]);
     var enter = 
       section.enter()
         .append('div').classed(classed,true)
 
-    enterField(enter, field);
-    updateField(section, field);
+    fields.forEach( function(field){
+      enterField(enter, field);
+      updateField(section, field);
+    });
 
     section.exit().remove();
     return section;
   }
+    
 
   function enterField(enter, field){
     if (field.dispatch) field.dispatch(dispatcher);
