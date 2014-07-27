@@ -33,7 +33,8 @@ module.exports = function(){
   }
 
   render.submit = function(_){
-    submit = _; return this;
+    submit = ('string' == typeof _ ? inputSubmit(submit) : _);
+    return this;
   }
 
   render.field = function(_){
@@ -62,9 +63,9 @@ module.exports = function(){
 
   /*
    * Bind 'reset' to:
-   * 1. single handler function with signature ( formindex )
-   * 2. array of functions
-   * 3. array of objects with 'reset' methods 
+   * 1. single handler function with signature ( formindex, value )
+   * 2. array of functions with signatures  ( value )
+   * 3. array of objects with 'reset' methods with signatures  ( value )
    *
    */
   render.bindReset = function(fns,name){
@@ -111,10 +112,10 @@ module.exports = function(){
     return this;
   }
 
- 
   function formData(){
     return data.map( function(rec,formindex){
       return {
+        'form': formindex,
         'value': rec,
         'fieldsets': fieldsets.map( function(fieldset,i){
           return {
@@ -126,7 +127,10 @@ module.exports = function(){
         }),
         'fields': inputs.map( function(){
           return { 'value': rec, 'form': formindex };
-        })
+        }),
+        'submit': [
+          { 'fields': [ { 'value': rec, 'form': formindex } ] }
+        ]
       };
     });
   }
@@ -134,7 +138,8 @@ module.exports = function(){
   function render(selection){
   
     var forms = selection.selectAll('form').data(formData());
-    var enter = forms.enter()
+    var enter = 
+      forms.enter()
            .append('form')
              .classed(formclass || "", !!formclass);
     
@@ -146,7 +151,10 @@ module.exports = function(){
 
     renderFields( forms.selectAll('div.fields'), inputs );
 
-    if (!(undefined === submit)) renderSubmit( forms );
+    if (!(undefined === submit)){
+      renderFields( forms, [submit], 'submit', 'submit' );
+    }
+
     forms.on('submit', dispatchSubmit);
 
   }
@@ -169,13 +177,14 @@ module.exports = function(){
 
   }
 
-  function renderFields(selection, fields){
-
-    var sections = selection.selectAll('div.field')
-                     .data( function(d){ return d.fields; });
+  function renderFields(selection, fields, classed, key){
+    key = key || 'fields';
+    classed = classed || 'field';
+    var sections = selection.selectAll('div.'+classed)
+                     .data( function(d){ return d[key]; });
     var enter = 
       sections.enter()
-        .append('div').classed('field',true)
+        .append('div').classed(classed,true)
     
     enter.each( function(d,i){
       var section = d3.select(this);
@@ -194,27 +203,6 @@ module.exports = function(){
     return sections;
 
   }
-
-  function renderSubmit( forms ){
-    if ('string' == typeof submit) submit = inputSubmit(submit);
-    return renderSection( forms, 'submit', [submit]);
-  }
-
-  function renderSection(selection, classed, fields){
-    var section = selection.selectAll('div.'+classed).data([0]);
-    var enter = 
-      section.enter()
-        .append('div').classed(classed,true)
-
-    fields.forEach( function(field){
-      enterField(enter, field);
-      updateField(section, field);
-    });
-
-    section.exit().remove();
-    return section;
-  }
-
 
   function enterField(enter, field){
     if (field.dispatch) field.dispatch(dispatcher);
@@ -236,6 +224,7 @@ module.exports = function(){
   rebind(render, dispatcher, 'on');
   return render;
 }
+
 
 
 /*
