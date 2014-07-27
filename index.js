@@ -63,9 +63,9 @@ module.exports = function(){
 
   /*
    * Bind 'reset' to:
-   * 1. single handler function with signature ( formindex, value )
-   * 2. array of functions with signatures  ( value )
-   * 3. array of objects with 'reset' methods with signatures  ( value )
+   * 1. single handler function with signature ( formindex, obj )
+   * 2. array of functions with signatures  ( obj )
+   * 3. array of objects with 'reset' methods with signatures  ( obj )
    *
    */
   render.bindReset = function(fns,name){
@@ -79,9 +79,9 @@ module.exports = function(){
 
   /*
    * Bind 'submit' to:
-   * 1. single handler function with signature ( formindex, value )
-   * 2. array of functions with signatures  ( value )
-   * 3. array of objects with 'save' methods with signatures   ( value )
+   * 1. single handler function with signature ( formindex, obj )
+   * 2. array of functions with signatures  ( obj )
+   * 3. array of objects with 'save' methods with signatures   ( obj )
    *
    */
   render.bindSubmit = function(fns,name){
@@ -116,20 +116,20 @@ module.exports = function(){
     return data.map( function(rec,formindex){
       return {
         'form': formindex,
-        'value': rec,
+        'data': rec,
         'fieldsets': fieldsets.map( function(fieldset,i){
           return {
             'legend': legends[i],
             'fields': fieldsets[i].map( function(){ 
-                        return { 'value': rec, 'form': formindex };  
+                        return { 'data': rec, 'form': formindex };  
                       })
           };
         }),
         'fields': inputs.map( function(){
-          return { 'value': rec, 'form': formindex };
+          return { 'data': rec, 'form': formindex };
         }),
         'submit': [
-          { 'fields': [ { 'value': rec, 'form': formindex } ] }
+          { 'fields': [ { 'data': rec, 'form': formindex } ] }
         ]
       };
     });
@@ -214,10 +214,10 @@ module.exports = function(){
   }
 
   // note i here is the form index
-  // and d.value is the current record
+  // and d.data is the current record
   function dispatchSubmit(d,i){
     d3.event.preventDefault();  // disable browser submit
-    dispatcher.submit(i, d.value);
+    dispatcher.submit(i, d.data);
   }
 
 

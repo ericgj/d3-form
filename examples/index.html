@@ -132,7 +132,7 @@
         function dispatch(d){
           if (undefined === evtname) return;
           d3.event.preventDefault();
-          dispatcher[evtname](d.form,d.value);
+          dispatcher[evtname](d.form,d.data);
         }
 
         return render;
@@ -173,7 +173,7 @@
         }
 
         function valueAccessor(d){
-          return d.value[name];
+          return d.data[name];
         }
         
         function dispatchInput(d){
