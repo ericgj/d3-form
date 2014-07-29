@@ -187,6 +187,7 @@ module.exports = function(){
   }
 
   function updateField(update, field){
+    if (field.dispatch) field.dispatch(dispatcher);
     update.call( field );
   }
 
