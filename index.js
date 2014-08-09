@@ -109,7 +109,9 @@ module.exports = function(){
     var fsets = renderFieldsets(form);
 
     enter.append('div').classed('fields',true)
-    renderFields( form.selectAll('div.fields'), inputs );
+    var flds = form.selectAll('div.fields')
+                 .data(function(d){ return d; });
+    renderFields( flds, inputs );
 
     if (!(undefined === submit)) renderSubmit( form );
 
