@@ -40,7 +40,7 @@
               inputText('age').label('Age'),
               inputText('color').label('Favorite Color')
             )
-            .legend('Stats')
+            .legend( function(d){ return 'Stats for ' + d.name } )
             .field( link('reset').dispatches('reset') )
             .field( link('random').onclick( function(){
                       d3.event.preventDefault();

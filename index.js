@@ -78,7 +78,6 @@ module.exports = function(){
     return {
       'fieldsets': fieldsets.map( function(fieldset,i){
         return {
-          'legend': legends[i],
           'fields': fieldsets[i].map( function(){
             return data;
           })
@@ -127,7 +126,10 @@ module.exports = function(){
     fsets.enter()
       .append('fieldset')
         .append('legend')
-          .text(function(d,i){ return legends[i];} );
+          .text(function(d,i){ 
+            var legend = legends[i];
+            return 'function' == typeof legend ? legend(d.fields[0],i) : legend;
+          });
     
     fsets.each( function(d,i){
       renderFields( d3.select(this), fieldsets[i] );
