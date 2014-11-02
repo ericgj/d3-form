@@ -49,6 +49,7 @@
                     })
             )
             .submit('Save')
+            .submit('Delete')
         )
       }
 
@@ -74,7 +75,8 @@
 
       function log(msg){
         return function(){
-          console.log(msg);
+          var args = [].slice.call(arguments,0); 
+          console.log(msg, args);
         }
       }
 

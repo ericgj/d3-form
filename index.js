@@ -3,7 +3,8 @@
 var dispatch = require('d3-dispatch')
   , rebind   = require('d3-rebind')
 
-var identityfn = function(d){ return d; };
+var itself = function(d){ return [d]; }
+var preventDefault = function(){ d3.event && d3.event.preventDefault(); }
 
 module.exports = function(){
   
@@ -12,7 +13,7 @@ module.exports = function(){
     , inputs = []
     , data = {}
     , dispatcher = dispatch('input','submit','reset')
-    , submit
+    , submits = []
     , formclass
 
   render.classed = function(_){
@@ -32,7 +33,9 @@ module.exports = function(){
   }
 
   render.submit = function(_){
-    submit = _; return this;
+    var submit = ('function' == typeof _ ? _ : inputSubmit(_));
+    submits.push(submit);
+    return this;
   }
 
   render.field = function(_){
@@ -85,6 +88,9 @@ module.exports = function(){
       }),
       'fields': inputs.map( function(){
         return data;
+      }),
+      'submits': submits.map( function(){
+        return data;
       })
     };
   }
@@ -108,13 +114,14 @@ module.exports = function(){
     var fsets = renderFieldsets(form);
 
     enter.append('div').classed('fields',true)
-    var flds = form.selectAll('div.fields')
-                 .data(function(d){ return [d]; });
+    var flds = form.selectAll('div.fields').data( itself );
     renderFields( flds, inputs );
 
-    if (!(undefined === submit)) renderSubmit( form );
+    enter.append('div').classed('submit',true)
+    var subs = form.selectAll('div.submit').data( itself );
+    renderSubmits( subs, submits );
 
-    form.on('submit', dispatchSubmit);
+    form.on('submit', preventDefault);
 
     form.exit().remove();
   }
@@ -126,14 +133,17 @@ module.exports = function(){
     fsets.enter()
       .append('fieldset')
         .append('legend')
-          .text(function(d,i){ 
-            var legend = legends[i];
-            return 'function' == typeof legend ? legend(d.fields[0],i) : legend;
-          });
     
+    fsets.select('legend')
+      .text(function(d,i){ 
+        var legend = legends[i];
+        return 'function' == typeof legend ? legend(d.fields[0],i) : legend;
+      });
+      
     fsets.each( function(d,i){
       renderFields( d3.select(this), fieldsets[i] );
     })
+
     fsets.exit().remove();
 
     return fsets;
@@ -164,40 +174,33 @@ module.exports = function(){
     return sections;
   }
   
-  function renderSubmit(selection){
-    if ('string' == typeof submit) submit = inputSubmit(submit);
-    return renderSection(selection, 'submit', [submit]);
-  }
+  function renderSubmits(selection, submits){
 
-  function renderSection(selection, classed, fields){
-    var section = selection.selectAll('div.' + classed).data([0]);
-    var enter = 
-      section.enter()
-        .append('div').classed(classed,true)
+    var inputs = selection.selectAll('input[type="submit"]')
+                   .data( function(d){ return d.submits; });
 
-    fields.forEach( function(field){
-      enterField(enter, field);
-      updateField(section, field);
+    inputs.enter()
+      .append('input').attr('type','submit');
+
+    inputs.each( function(d,i){
+      var input = d3.select(this);
+      var submit = submits[i];
+      updateField(input, submit);
     });
 
-    section.exit().remove();
-    return section;
+    inputs.exit().remove();
+
+    return inputs;
   }
-    
 
   function enterField(enter, field){
     if (field.dispatch) field.dispatch(dispatcher);
-    enter.call( field.enter );
+    enter.call( field.enter, dispatcher );
   }
 
   function updateField(update, field){
     if (field.dispatch) field.dispatch(dispatcher);
-    update.call( field );
-  }
-
-  function dispatchSubmit(d,i){
-    d3.event.preventDefault();  // disable browser submit
-    dispatcher.submit(d,i);
+    update.call( field, dispatcher );
   }
 
   rebind(render, dispatcher, 'on');
@@ -212,18 +215,24 @@ module.exports = function(){
 function inputSubmit(name){
 
   var labeltext = name
+    , dispatcher
 
   render.label = function(_){
     labeltext = _; return this;
   }
 
-  render.enter = function(enter){
-    enter.append('input').attr('type','submit').attr('name',name);
+  render.dispatch = function(_){
+    dispatcher = _; return this;
   }
 
-  function render(selection){
-    var btn = selection.select('input[type=submit]');
+  function render(btn){
+    btn.attr('name', name);
     btn.attr('value',labeltext);
+    btn.on('click', dispatchSubmit);
+  }
+
+  function dispatchSubmit(d,i){
+    if (dispatcher) dispatcher.submit(name, d, i);
   }
 
   return render;
