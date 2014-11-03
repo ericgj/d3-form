@@ -13,7 +13,6 @@ module.exports = function(){
     , inputs = []
     , data = {}
     , dispatcher = dispatch('input','submit','reset')
-    , submits = []
     , formclass
 
   render.classed = function(_){
@@ -34,7 +33,7 @@ module.exports = function(){
 
   render.submit = function(_){
     var submit = ('function' == typeof _ ? _ : inputSubmit(_));
-    submits.push(submit);
+    inputs.push(submit);
     return this;
   }
 
@@ -88,9 +87,6 @@ module.exports = function(){
       }),
       'fields': inputs.map( function(){
         return data;
-      }),
-      'submits': submits.map( function(){
-        return data;
       })
     };
   }
@@ -108,18 +104,13 @@ module.exports = function(){
     var enter = 
       form.enter()
           .append('form')
-            .classed(formclass || "", !!formclass);
-    
+            .classed(formclass || "", !!formclass);   
 
     var fsets = renderFieldsets(form);
 
     enter.append('div').classed('fields',true)
     var flds = form.selectAll('div.fields').data( itself );
     renderFields( flds, inputs );
-
-    enter.append('div').classed('submit',true)
-    var subs = form.selectAll('div.submit').data( itself );
-    renderSubmits( subs, submits );
 
     form.on('submit', preventDefault);
 
@@ -174,25 +165,6 @@ module.exports = function(){
     return sections;
   }
   
-  function renderSubmits(selection, submits){
-
-    var inputs = selection.selectAll('input[type="submit"]')
-                   .data( function(d){ return d.submits; });
-
-    inputs.enter()
-      .append('input').attr('type','submit');
-
-    inputs.each( function(d,i){
-      var input = d3.select(this);
-      var submit = submits[i];
-      updateField(input, submit);
-    });
-
-    inputs.exit().remove();
-
-    return inputs;
-  }
-
   function enterField(enter, field){
     if (field.dispatch) field.dispatch(dispatcher);
     enter.call( field.enter, dispatcher );
@@ -225,7 +197,12 @@ function inputSubmit(name){
     dispatcher = _; return this;
   }
 
-  function render(btn){
+  render.enter = function(selection){
+    selection.append('input').attr('type','submit');
+  }
+
+  function render(selection){
+    var btn = selection.select('input[type="submit"]');
     btn.attr('name', name);
     btn.attr('value',labeltext);
     btn.on('click', dispatchSubmit);
