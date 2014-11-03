@@ -13,6 +13,28 @@
         margin-right: 2px;
         margin-left: 4px;
       }
+
+      form fieldset.submit {
+        padding: 3px;
+        border-radius: 3px;
+      }
+
+      form button[type="submit"]{
+        border: 1px solid darkgrey;
+        border-radius: 3px;
+        padding: 5px;
+        background-color: lightgrey;
+      }
+
+      form button[name="save"] {
+        background-color: red;
+        color: white;
+      }
+
+      form button[name="del"]::after {
+        content: "x";
+      }
+
     </style>
   </head>
   <body>
@@ -26,34 +48,43 @@
         { name: "Celyne", age: 22, color: "blue" }
       ]
 
-      var curs = 0;
-
-      function render(){
-        d3.select('body').call( 
-          Form().data( extend({},data[curs]) )
-            .bindInput( logInput )
-            .on( 'reset', function(){ render(); } )
-            .on( 'submit.log', log('submitted') )
-            .on( 'reset.log', log('reset') )
-            .fieldset(
-              inputText('name').label('Name'),
-              inputText('age').label('Age'),
-              inputText('color').label('Favorite Color')
-            )
-            .legend( function(d){ return 'Stats for ' + d.name } )
-            .field( link('reset').dispatches('reset') )
-            .field( link('random').onclick( function(){
-                      d3.event.preventDefault();
-                      curs = Math.floor( Math.random() * data.length );
-                      render();
-                    })
-            )
-            .submit('Save')
-            .submit('Delete')
-        )
+      var fakeModel = {
+        set: function(key,val){
+          console.log('set %s => %s', key, val);
+        }
       }
 
-      render(data[0]);
+      var curs = 0;
+
+      var form = 
+        Form().onInput(fakeModel, 'set')
+              .on( 'reset', function(){ render(); } )
+              .on( 'submit.log', log('submitted') )
+              .on( 'reset.log', log('reset') )
+              .item( Form.fieldset( 'stats', [
+                       Form.field('name',  inputText('name').label('Name')),
+                       Form.field('age',   inputText('age').label('Age')),
+                       Form.field('color', inputText('color').label('Favorite Color'))
+                     ]).legend( function(d){ return "Stats for " + d.name; } )
+              )
+              .field( 'reset',  link('reset').dispatches('reset') )
+              .field( 'random', link('random').onclick( function(){
+                        d3.event.preventDefault();
+                        curs = Math.floor( Math.random() * data.length );
+                        render();
+                      })
+              )
+              .fieldset('submit', 
+                ['save', Form.submit('save').label('Save')],
+                ['del',  Form.submit('del')]
+              )
+      ;
+
+      function render(){
+        d3.select('body').call( form.data( extend({},data[curs]) ) );
+      }
+
+      render();
 
       function extend(object) {
         // Takes an unlimited number of extenders.
@@ -67,10 +98,6 @@
           }
         }
         return object;
-      }
-
-      function logInput(key,val){
-        console.log('%s => %s', key, val);
       }
 
       function log(msg){
@@ -175,4 +202,5 @@
     </script>
   </body>
 </html>
+
 
