@@ -5,13 +5,18 @@
 
   * Declarative form builder syntax
   * Input binding abstracted from DOM events
+  * Composable
   * Simple interface for custom input components
+  * Dynamic (data-driven) component generation
   
 ## Installation
 
   Install with [component(1)](http://component.io):
 
     $ component install ericgj/d3-form
+
+  Note this library has an implicit dependency on d3. That is, it assumes a
+  `d3` global.
 
 ## Example
 
@@ -20,17 +25,22 @@
   var data = { name: "Aaron", age: 51, color: "red" };
 
   d3.select('div.form').call( 
-    form().data( data ).bindInput( inputHandler )
-      .fieldset(
+    form().data( data )
+      .onInput( model, 'set' )
+      .onSubmit( submitHandler )
+      .fieldset( 'stats', [
         inputText('name').label('Name'),
         inputText('age').label('Age'),
         inputText('color').label('Favorite Color')
-      )
-      .legend('Stats')
+      ])
       .submit('Save')
   )
 
 ```
+For a more feature-filled example, see `examples/index.html`.
+
+
+### Data binding
 
 For so-called "double-binding" you can simply call the form again passing
 in the changed data.
@@ -39,9 +49,9 @@ in the changed data.
 
   // form input bound to model
 
-  myForm.bindInput( someModel.set.bind(someModel) );
+  myForm.onInput( someModel, 'set' );
 
-  // model changes bound to form
+  // external model changes bound to form
 
   someModel.on('update', function(){ 
     d3.select('div.form').call( myForm.data(someModel.currentData()) );
@@ -52,10 +62,6 @@ in the changed data.
 Note it's up to you how your models are connected to the data you send into
 the form, and how they expect events to be handled.
 
-However, if your models have a `set(key,value)` method, the above example
-input binding can be shortened to `myForm.bindInput( someModel );`.
-
-
 ## API
 
   
@@ -63,6 +69,8 @@ input binding can be shortened to `myForm.bindInput( someModel );`.
 
   - Document API
   - Document how to write input components
+  - Document dynamic field generation
+
   
 ## License
 
