@@ -3,12 +3,15 @@
 var dispatch = require('d3-dispatch')
   , rebind   = require('d3-rebind')
 
+var identity = function(d){ return d; }
 var itself = function(d){ return [d]; }
 var preventDefault = function(){ d3.event && d3.event.preventDefault(); }
-
+var accessor = function(name){ return function(d){ return d[name]; } }
 
 module.exports = form;
 module.exports.field = field;
+module.exports.div = div;
+module.exports.subdiv = subdiv;
 module.exports.button = button;
 module.exports.submit = submit;
 module.exports.reset = reset;
@@ -57,8 +60,8 @@ function form(){
     return this.item(fieldset(name, flds), itself); 
   }
 
-  render.generate = function(fn, subdata){
-    return this.item(field(fn), subdata);
+  render.generate = function(name, fn, subdata){
+    return this.item(subdiv(fn).classed(name), subdata);
   }
 
   render.onInput = function(obj, meth){
@@ -78,14 +81,14 @@ function form(){
     var enter = form.enter().append('form')
                               .classed(formclass, !!formclass);
 
-    items.forEach( function(item){
+    for (var i=0;i<items.length;++i){
+      var item = items[i]
       var itemrender = item[0]
         , itemdata = item[1] || itself;
       
       enter.call( renderEnter( itemrender, dispatcher), itemdata );
       form.call(  renderUpdate(itemrender, dispatcher), itemdata );
-
-    });
+    }
 
     // disable default form submit and reset handling
     form.on('submit', preventDefault);
@@ -104,37 +107,81 @@ function form(){
   return render;
 }
 
+function field(name, fn){ 
+  return div(name, fn).classed('field');
+}
 
-function field(name, fn){
+function div(name, fn){
 
-  var dispatcher;
+  var dispatcher
+    , divclass = ''
+
+  render.classed = function(_){
+    divclass = _; return this;
+  }
+
+  render.dispatch = function(_){
+    dispatcher = _; return this;
+  }
+
+  /* note div generation is dynamic, so everything is done in update cycle */
+  function render(selection, data){
+    var root = selection.selectAll(selector()).data(data)
+                           .attr('name', name);
+    var enter = root.enter().append('div')
+                       .classed(divclass, !!divclass)
+                       .attr('name', name);
+    enter.call( renderEnter(fn, dispatcher), data );
+    root.call( renderUpdate(fn, dispatcher), data );
+    root.exit().remove();
+  }
+
+  function selector(){
+    return 'div' + 
+           (!!divclass ? '.' + divclass : '') +
+           ((!!name && ('string' == typeof name)) ? '[name="' + name + '"]' : '');
+  }
+           
+
+  if (arguments.length == 1) { fn = name; name = null; }
+  return render;
+}
+
+function subdiv(name, fn){
+
+  var dispatcher
+    , divclass = ''
+
+  render.classed = function(_){
+    divclass = _; return this;
+  }
 
   render.dispatch = function(_){
     dispatcher = _; return this;
   }
 
   render.enter = function(selection, data){
-    var selector = !!name ?  'div.field.' + name : 'div.field';
-    var root  = selection.selectAll(selector).data(data);
-    var enter = root.enter().append('div')
-                      .classed('field',true)
-                      .attr('data-field', name);
-
-    enter.call( renderEnter(fn, dispatcher), data );
-
-    root.exit().remove();
+    var root = selection.append('div')
+                          .classed(divclass, !!divclass)
+                          .attr('name', name);
+    root.call( renderEnter(fn, dispatcher), data );
   }
 
   function render(selection, data){
-    var selector = !!name ?  'div.field[data-field="' + name + '"]' : '.field';
-    var root = selection.selectAll(selector).data(data);
-
+    var root = selection.select(selector());
     root.call( renderUpdate(fn, dispatcher), data );
+  }
+
+  function selector(){
+    return 'div' + 
+           (!!divclass ? '.' + divclass : '') +
+           (!!name ? '[name="' + name + '"]' : '');
   }
 
   if (arguments.length == 1) { fn = name; name = null; }
   return render;
 }
+
 
 function submit(name){
   return button(name).type('submit');

@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <script src="d3.v3.min.js"></script>
     <style>
-      form .fields, form .field, form .submit {
+      form .field, form .submit, form .buttons {
         display: inline-block;
         margin: 2px;
       }
@@ -31,6 +31,14 @@
         color: white;
       }
 
+      form .field[name="prev"] > a::after {
+        content: "←";
+      }
+
+      form .field[name="next"] > a::after {
+        content: "→";
+      }
+
       form button[name="del"]::after {
         content: "x";
       }
@@ -41,11 +49,13 @@
     <script src="../build/build.js"></script>
     <script>
       var Form = require('d3-form');
-      
+      var identity = function(d){ return d; }
+      var accessor = function(name){ return function(d){ return d[name]; }; };
+
       var data = [
-        { name: "Aaron", age: 51, color: "red" },
-        { name: "Bertha", age: 2, color: "purple" },
-        { name: "Celyne", age: 22, color: "blue" }
+        { name: "Aaron", age: 51, color: "red", buttons: ["next"] },
+        { name: "Bertha", age: 2, color: "purple", buttons: ["prev", "next"] },
+        { name: "Celyne", age: 22, color: "blue", buttons: ["prev"]  }
       ]
 
       var fakeModel = {
@@ -67,6 +77,10 @@
                        Form.field('color', inputText('color').label('Favorite Color'))
                      ]).legend( function(d){ return "Stats for " + d.name; } )
               )
+              .generate( 'buttons', 
+                         Form.field(identity, link('nav').label(null)), 
+                         accessor('buttons')
+                       )
               .field( 'reset',  link('reset').dispatches('reset') )
               .field( 'random', link('random').onclick( function(){
                         d3.event.preventDefault();
