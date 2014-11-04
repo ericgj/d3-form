@@ -28,11 +28,11 @@
     form().data( data )
       .onInput( model, 'set' )
       .onSubmit( submitHandler )
-      .fieldset( 'stats', [
-        inputText('name').label('Name'),
-        inputText('age').label('Age'),
-        inputText('color').label('Favorite Color')
-      ])
+      .fieldset( 'stats', 
+        ['name',  inputText('name').label('Name')],
+        ['age',   inputText('age').label('Age')],
+        ['color', inputText('color').label('Favorite Color')]
+      )
       .submit('Save')
   )
 
