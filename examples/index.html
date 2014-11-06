@@ -26,14 +26,13 @@
         background-color: lightgrey;
       }
 
-      form button[name="save"] {
+      form button[default] {
         background-color: red;
         color: white;
       }
 
       form button[disabled] {
-        background-color: pink;
-        color: darkgrey;
+        opacity: 0.5;
       }
 
       form .field[name="prev"] > a::after {
@@ -100,7 +99,9 @@
                       })
               )
               .fieldset('submit', 
-                ['save', Form.submit('save').label('Save').disabled(function(d){ return d.name == 'Aaron'; })],
+                ['save', Form.submit('save').label('Save')
+                                            .isdefault(true)
+                                            .disabled(function(d){ return d.name == 'Aaron'; })],
                 ['del',  Form.del().visible(function(d){ return d.color !== 'purple'; }) ],
                 ['refresh',  Form.refresh()]
               )

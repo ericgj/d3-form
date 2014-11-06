@@ -286,6 +286,7 @@ function button(name){
     , btntype = null
     , disabled = false
     , visible = true
+    , isdefault = false
 
   render.dispatch = function(_){
     dispatcher = _; return this;
@@ -311,6 +312,10 @@ function button(name){
     visible = _; return this;
   }
 
+  render.isdefault = function(_){
+    isdefault = _; return this;
+  }
+
   render.enter = function(selection, data){
     var selector = !!name ?  'button[name="' + name + '"]' : 'button';
     var btn  = selection.selectAll(selector).data(data);
@@ -327,6 +332,7 @@ function button(name){
     btn.text(labeltext);
     btn.style('display', iif(visible,null,'none') );
     btn.attr('disabled', iif(disabled,'',null) );
+    btn.attr('default',  iif(isdefault,'',null) );
 
     // note convention for 'input' button: dispatches key = name, value = 1
     if (dispatcher && dispatches) {
