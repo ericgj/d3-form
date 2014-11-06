@@ -21,6 +21,8 @@ module.exports.subdiv = subdiv;
 module.exports.button = button;
 module.exports.submit = submit;
 module.exports.reset = reset;
+module.exports.del = del;
+module.exports.refresh = refresh;
 module.exports.fieldset = fieldset;
 
 function form(){
@@ -109,8 +111,9 @@ function form(){
     }
 
     // disable default form submit and reset handling
-    form.on('submit.preventDefault', preventDefault());
-    form.on('reset.preventDefault', preventDefault());
+    var nodefault = preventDefault();
+    form.on('submit.preventDefault', nodefault);
+    form.on('reset.preventDefault',  nodefault);
 
     form.exit().remove();
   }
@@ -124,6 +127,10 @@ function form(){
   rebind(render, dispatcher, 'on');
   return render;
 }
+
+
+
+/******************************** field, div, subdiv  */
 
 function field(name, fn){ 
   return div(name, fn).classed('field');
@@ -201,65 +208,7 @@ function subdiv(name, fn){
 }
 
 
-function submit(name){
-  return button(name).type('submit').dispatches('submit');
-}
-
-function reset(name){
-  return button(name).type('reset').dispatches('reset');
-}
-
-function button(name){
-
-  var dispatcher
-    , dispatches
-    , labeltext = null
-    , btntype = null;
-
-  render.dispatch = function(_){
-    dispatcher = _; return this;
-  }
-
-  render.label = function(_){
-    labeltext = _; return this;
-  }
-
-  render.type = function(_){
-    btntype = _; return this;
-  }
-
-  render.dispatches = function(_){
-    dispatches = _; return this;
-  }
-
-  render.enter = function(selection, data){
-    var selector = !!name ?  'button[name="' + name + '"]' : 'button';
-    var btn  = selection.selectAll(selector).data(data);
-    var enter = btn.enter().append('button')
-                      .attr('name',name)
-    btn.exit().remove();
-  }
-
-  function render(selection, data){
-    var selector = !!name ?  'button[name="' + name + '"]' : 'button';
-    var btn = selection.selectAll(selector).data(data);
-    btn.attr('type',btntype);
-    btn.text(labeltext);
-    if (dispatcher && dispatches) {
-      var handler;
-      if (dispatches == 'input') { 
-        handler = dispatchEventFn(dispatcher,dispatches,name,1);
-      } else { 
-        handler = dispatchEventFn(dispatcher,dispatches,name);
-      }
-      btn.on('click', handler);
-    }
-  }
-
-  return render;
-
-}
-
+/******************************** fieldset  */
 
 function fieldset(name, fields){
 
@@ -302,6 +251,93 @@ function fieldset(name, fields){
 }
 
 
+
+/******************************** buttons  */
+
+function submit(name){
+  return button(name || 'submit').type('submit').dispatches('submit');
+}
+
+function reset(name){
+  return button(name || 'reset').type('reset').dispatches('reset');
+}
+
+function del(name){
+  return button(name || 'del').dispatches('del');
+}
+
+function refresh(name){
+  return button(name || 'refresh').dispatches('refresh');
+}
+
+function button(name){
+
+  var dispatcher
+    , dispatches
+    , labeltext = null
+    , btntype = null
+    , disabled = false
+    , visible = true
+
+  render.dispatch = function(_){
+    dispatcher = _; return this;
+  }
+
+  render.label = function(_){
+    labeltext = _; return this;
+  }
+
+  render.type = function(_){
+    btntype = _; return this;
+  }
+
+  render.dispatches = function(_){
+    dispatches = _; return this;
+  }
+
+  render.disabled = function(_){
+    disabled = _; return this;
+  }
+
+  render.visible = function(_){
+    visible = _; return this;
+  }
+
+  render.enter = function(selection, data){
+    var selector = !!name ?  'button[name="' + name + '"]' : 'button';
+    var btn  = selection.selectAll(selector).data(data);
+    var enter = btn.enter().append('button')
+                      .attr('name',name)
+    btn.exit().remove();
+  }
+
+  function render(selection, data){
+    var selector = !!name ?  'button[name="' + name + '"]' : 'button';
+    var btn = selection.selectAll(selector).data(data);
+    
+    btn.attr('type',btntype);
+    btn.text(labeltext);
+    btn.style('display', iif(visible,null,'none') );
+    btn.attr('disabled', iif(disabled,'',null) );
+
+    // note convention for 'input' button: dispatches key = name, value = 1
+    if (dispatcher && dispatches) {
+      var handler;
+      if (dispatches == 'input') { 
+        handler = dispatchEventFn(dispatcher,dispatches,name,1);
+      } else { 
+        handler = dispatchEventFn(dispatcher,dispatches,name);
+      }
+      btn.on('click', handler);
+    }
+  }
+
+  return render;
+
+}
+
+
+
 // utils
 
 function renderEnter(fn, dispatcher){
@@ -330,4 +366,12 @@ function dispatchEventFn(dispatcher, evt){
   }
 }
 
+
+function iif(pred,t,f){
+  return function(){
+    if (!('function' == typeof pred)) return (pred ? t : f);
+    var args = [].slice.call(arguments,0);
+    return (pred.apply(null,args) ? t : f) ;
+  }
+}
 

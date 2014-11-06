@@ -31,6 +31,11 @@
         color: white;
       }
 
+      form button[disabled] {
+        background-color: pink;
+        color: darkgrey;
+      }
+
       form .field[name="prev"] > a::after {
         content: "←";
       }
@@ -41,6 +46,10 @@
 
       form button[name="del"]::after {
         content: "x";
+      }
+
+      form button[name="refresh"]::after {
+        content: "!";
       }
 
     </style>
@@ -71,6 +80,8 @@
               .on( 'reset', function(){ render(); } )
               .on( 'submit.log', log('submitted') )
               .on( 'reset.log', log('reset') )
+              .on( 'del.log', log('del') )
+              .on( 'refresh.log', log('refresh') )
               .item( Form.fieldset( 'stats', [
                        Form.field('name',  inputText('name').label('Name')),
                        Form.field('age',   inputText('age').label('Age')),
@@ -89,8 +100,9 @@
                       })
               )
               .fieldset('submit', 
-                ['save', Form.submit('save').label('Save')],
-                ['del',  Form.submit('del')]
+                ['save', Form.submit('save').label('Save').disabled(function(d){ return d.name == 'Aaron'; })],
+                ['del',  Form.del().visible(function(d){ return d.color !== 'purple'; }) ],
+                ['refresh',  Form.refresh()]
               )
       ;
 
