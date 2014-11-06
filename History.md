@@ -1,3 +1,19 @@
+# 0.3.1 ::  6-Nov-2014
+
+- standardize event callback signatures:
+  - for input events:   key,value,d,i,j  (where d,i,j is the d3 standard signature)
+  - for other events:   name,d,i,j
+    Note that `name` is a "subevent", application-specific name, typically 
+    corresponding to the submit button clicked. For example, you may have a submit
+    button "save", and another "save-draft", which you want to distinguish.
+
+- Note this breaks compatibility particularly for onSubmit and onReset event 
+  handlers.
+
+- Add "del" and "refresh" events, and corresponding button builders, for typical
+  cases of form actions not addressed by HTML form standards.
+
+
 # 0.2.1 ::  3-Nov-2014
 
 - Internal reimplementation

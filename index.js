@@ -96,6 +96,14 @@ function form(){
     dispatchToMethod('submit', obj, meth); return this;
   }
 
+  render.onDel = function(obj, meth){
+    dispatchToMethod('del', obj, meth); return this;
+  }
+
+  render.onRefresh = function(obj, meth){
+    dispatchToMethod('refresh', obj, meth); return this;
+  }
+
   function render(selection){
     var form = selection.selectAll('form').data([data]);
     var enter = form.enter().append('form')
