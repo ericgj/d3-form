@@ -226,7 +226,7 @@ function button(name){
   }
 
   function dispatchEvent(d,i){
-    if (dispatcher) dispatcher[btntype](name, d, i);
+    if (dispatcher) dispatcher[btntype](d, i, name);
   }
 
   return render;
