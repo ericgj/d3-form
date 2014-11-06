@@ -5,7 +5,13 @@ var dispatch = require('d3-dispatch')
 
 var identity = function(d){ return d; }
 var itself = function(d){ return [d]; }
-var preventDefault = function(){ d3.event && d3.event.preventDefault(); }
+var preventDefault = function(fn){ 
+  var self = this;
+  return function(){
+    if (fn) fn.apply(self, [].slice.call(arguments,0));
+    d3.event && d3.event.preventDefault();
+  }
+}
 var accessor = function(name){ return function(d){ return d[name]; } }
 
 module.exports = form;
@@ -22,7 +28,7 @@ function form(){
   var data = {}
     , items = []  // [ render, subdata ]
     , formclass = ''
-    , dispatcher = dispatch('input','reset','submit');
+    , dispatcher = dispatch('input','reset','submit','del','refresh');
 
   render.classed = function(_){
     formclass = _; return this;
@@ -40,10 +46,14 @@ function form(){
     return this.item(field(name,fn), itself); 
   }
 
-  render.button = function(name, label, type){
-    if (arguments.length == 2) { type = null; }
-    if (arguments.length == 1) { type = null; label = null; }
-    return this.item(field(name, button(name).type(type).label(label)), itself);
+  render.button = function(name, label, type, dispatches){
+    if (arguments.length == 3) { dispatches = type; }
+    if (arguments.length == 2) { dispatches = null; type = null; }
+    if (arguments.length == 1) { dispatches = null; type = null; label = null; }
+    return this.item(
+             field(name, button(name).type(type).label(label).dispatches(dispatches)), 
+             itself
+           );
   }
 
   render.submit = function(name, label){
@@ -52,6 +62,14 @@ function form(){
 
   render.reset = function(name, label){
     return this.button(name, label, 'reset');
+  }
+
+  render.del = function(name, label){
+    return this.button(name, label, 'button', 'del');
+  }
+
+  render.refresh = function(name, label){
+    return this.button(name, label, 'button', 'refresh');
   }
 
   render.fieldset = function(name){
@@ -91,8 +109,8 @@ function form(){
     }
 
     // disable default form submit and reset handling
-    form.on('submit', preventDefault);
-    form.on('reset', preventDefault);
+    form.on('submit.preventDefault', preventDefault());
+    form.on('reset.preventDefault', preventDefault());
 
     form.exit().remove();
   }
@@ -184,16 +202,17 @@ function subdiv(name, fn){
 
 
 function submit(name){
-  return button(name).type('submit');
+  return button(name).type('submit').dispatches('submit');
 }
 
 function reset(name){
-  return button(name).type('reset');
+  return button(name).type('reset').dispatches('reset');
 }
 
 function button(name){
 
   var dispatcher
+    , dispatches
     , labeltext = null
     , btntype = null;
 
@@ -209,6 +228,10 @@ function button(name){
     btntype = _; return this;
   }
 
+  render.dispatches = function(_){
+    dispatches = _; return this;
+  }
+
   render.enter = function(selection, data){
     var selector = !!name ?  'button[name="' + name + '"]' : 'button';
     var btn  = selection.selectAll(selector).data(data);
@@ -222,11 +245,15 @@ function button(name){
     var btn = selection.selectAll(selector).data(data);
     btn.attr('type',btntype);
     btn.text(labeltext);
-    btn.on('click', dispatchEvent);
-  }
-
-  function dispatchEvent(d,i){
-    if (dispatcher) dispatcher[btntype](d, i, name);
+    if (dispatcher && dispatches) {
+      var handler;
+      if (dispatches == 'input') { 
+        handler = dispatchEventFn(dispatcher,dispatches,name,1);
+      } else { 
+        handler = dispatchEventFn(dispatcher,dispatches,name);
+      }
+      btn.on('click', handler);
+    }
   }
 
   return render;
@@ -275,6 +302,8 @@ function fieldset(name, fields){
 }
 
 
+// utils
+
 function renderEnter(fn, dispatcher){
   return function(enter, data){
     if (dispatcher && fn.dispatch) fn.dispatch(dispatcher);
@@ -286,6 +315,18 @@ function renderUpdate(fn, dispatcher){
   return function(update, data){
     if (dispatcher && fn.dispatch) fn.dispatch(dispatcher);
     update.call( fn, data );
+  }
+}
+
+// return handler function that dispatches event with context params + standard d3 [d,i,j] params
+// the convention is that input event signature is ===>  key,value,d,i,j
+// all other event signatures are  ===>  name,d,i,j
+function dispatchEventFn(dispatcher, evt){
+  var self = this;
+  var ctxargs = [].slice.call(arguments,2);
+  return function(){
+    var args = [].slice.call(arguments,0);  
+    dispatcher[evt].apply(self, ctxargs.concat(args));
   }
 }
 
