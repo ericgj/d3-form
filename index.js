@@ -287,6 +287,7 @@ function button(name){
     , disabled = false
     , visible = true
     , isdefault = false
+    , handlers = {}
 
   render.dispatch = function(_){
     dispatcher = _; return this;
@@ -314,6 +315,10 @@ function button(name){
 
   render.isdefault = function(_){
     isdefault = _; return this;
+  }
+
+  render.on = function(evt, handler){
+    handlers[evt] = handler; return this;
   }
 
   render.enter = function(selection, data){
@@ -344,6 +349,10 @@ function button(name){
       }
       btn.on('click', handler);
     }
+
+    // note manual event handlers will override dispatch handler
+    for (var k in handlers) btn.on(k, handlers[k]);
+
   }
 
   return render;

@@ -51,6 +51,10 @@
         content: "!";
       }
 
+      form button[name="back"]::after {
+        content: "↩";
+      }
+
     </style>
   </head>
   <body>
@@ -104,6 +108,9 @@
                                             .disabled(function(d){ return d.name == 'Aaron'; })],
                 ['del',  Form.del().visible(function(d){ return d.color !== 'purple'; }) ],
                 ['refresh',  Form.refresh()]
+              )
+              .field( 
+                'back', Form.button('back').on('click', function(){ window.alert('back!'); } )
               )
       ;
 
