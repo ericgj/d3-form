@@ -326,6 +326,7 @@ function button(name){
     var btn  = selection.selectAll(selector).data(data);
     var enter = btn.enter().append('button')
                       .attr('name',name)
+                      .html('&nbsp;');
     btn.exit().remove();
   }
 
