@@ -335,7 +335,7 @@ function button(name){
     var btn = selection.selectAll(selector).data(data);
     
     btn.attr('type',btntype);
-    btn.text(labeltext);
+    if (!(labeltext === null)) btn.text(labeltext);
     btn.style('display', iif(visible,null,'none') );
     btn.attr('disabled', iif(disabled,'',null) );
     btn.attr('default',  iif(isdefault,'',null) );
